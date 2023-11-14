@@ -6,112 +6,73 @@ const _ = require('lodash');
  * Curently supports AMQP alone
  * Example Output:
  * {
- *   "hasAMQP": true
+ *   "hasGooglePubSub": true
  * }
  */
 export function GetProtocolFlags(asyncapi) {
   const protocolFlags = {
-    hasAMQP: false
+    hasGooglePubSub: false
   };
 
-  const channelEntries = Object.keys(asyncapi.channels()).length ? Object.entries(asyncapi.channels()) : [];
-  //if there are no channels do nothing
-  if (channelEntries.length === 0) {
+  const serverEntries = Object.keys(asyncapi.servers()).length ? Object.entries(asyncapi.servers()) : [];
+  //if there are no servers do nothing
+  if (serverEntries.length === 0) {
     return protocolFlags;
   }
 
-  //if there are no amqp publisher or subscribers do nothing
-  const hasAMQP = channelEntries.filter(([channelName, channel]) => {
-    return (channel.hasPublish() || channel.hasSubscribe) && channel.bindings().amqp;
+  //if there are no supported servers do nothing
+  const hasGooglePubSub = serverEntries.filter(([serverName, server]) => {
+    return server.protocol() === 'googlepubsub';
   }).length > 0;
 
-  protocolFlags.hasAMQP = hasAMQP;
+  protocolFlags.hasGooglePubSub = hasGooglePubSub;
 
   return protocolFlags;
-}
-
-/**
- * Input: parsed asyncapi object
- * Output: object which indicates what protocols have subscribers
- * Curently supports AMQP alone
- * Example Output:
- * {
- *   "hasAMQPSub": true
- * }
- */
-export function GetSubscriberFlags(asyncapi) {
-  const subscriberFlags = {
-    hasAMQPSub: false
-  };
-
-  const channelEntries = Object.keys(asyncapi.channels()).length ? Object.entries(asyncapi.channels()) : [];
-  //if there are no channels do nothing
-  if (channelEntries.length === 0) {
-    return subscriberFlags;
-  }
-
-  //if there are no amqp publisher or subscribers do nothing
-  const hasAMQPSub = channelEntries.filter(([channelName, channel]) => {
-    return channel.hasPublish() && channel.bindings().amqp;
-  }).length > 0;
-
-  subscriberFlags.hasAMQPSub = hasAMQPSub;
-
-  return subscriberFlags;
-}
-
-/**
- * Input: parsed asyncapi object
- * Output: object which indicates what protocols have publishers
- * Curently supports AMQP alone
- * Example Output:
- * {
- *   "hasAMQPPub": true
- * }
- */
-export function GetPublisherFlags(asyncapi) {
-  const publisherFlags = {
-    hasAMQPPub: false
-  };
-
-  const channelEntries = Object.keys(asyncapi.channels()).length ? Object.entries(asyncapi.channels()) : [];
-  //if there are no channels do nothing
-  if (channelEntries.length === 0) {
-    return publisherFlags;
-  }
-
-  //if there are no amqp publisher or subscribers do nothing
-  const hasAMQPPub = channelEntries.filter(([channelName, channel]) => {
-    return channel.hasSubscribe() && channel.bindings().amqp;
-  }).length > 0;
-
-  publisherFlags.hasAMQPPub = hasAMQPPub;
-
-  return publisherFlags;
 }
 
 export function hasPubOrSub(asyncapi) {
   return hasPub(asyncapi) || hasSub(asyncapi);
 }
 
-export function hasSub(asyncapi) {
-  const subscriberFlags = GetSubscriberFlags(asyncapi);
-  for (const protocol in subscriberFlags) {
-    if (subscriberFlags[`${protocol}`] === true) {
+export function hasSupportedProtocol(asyncapi) {
+  const protocolFlags = GetProtocolFlags(asyncapi);
+  for (const protocol in protocolFlags) {
+    if (protocolFlags[`${protocol}`] === true) {
       return true;
     }
   }
   return false;
 }
 
-export function hasPub(asyncapi) {
-  const publisherFlags = GetPublisherFlags(asyncapi);
-  for (const protocol in publisherFlags) {
-    if (publisherFlags[`${protocol}`] === true) {
+export function channelHasPub(channel) {
+  return channel.operations().filterByReceive().length > 0;
+}
+
+export function channelHasSub(channel) {
+  return channel.operations().filterBySend().length > 0;
+}
+
+
+export function hasSub(asyncapi) {
+
+  for (const channel of asyncapi.channels()) {
+    if (channelHasSub(channel)) {
       return true;
     }
   }
+
   return false;
+}
+
+export function hasPub(asyncapi) {
+
+  for (const channel of asyncapi.channels()) {
+    if (channelHasPub(channel)) {
+      return true;
+    }
+  }
+
+  return false
 }
 
 export function pascalCase(string) {

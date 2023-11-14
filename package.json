@@ -1,5 +1,5 @@
 {
-  "name": "@asyncapi/go-watermill-template",
+  "name": "@arthurspa/go-watermill-template",
   "version": "0.2.44",
   "description": "Template for generating Go module based on async api",
   "main": "index.js",
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/asyncapi/go-watermill-template"
+    "url": "git+https://github.com/arthurspa/go-watermill-template"
   },
   "keywords": [
     "asyncapi",
@@ -28,14 +28,15 @@
     "access": "public"
   },
   "bugs": {
-    "url": "https://github.com/asyncapi/go-watermill-template"
+    "url": "https://github.com/arthurspa/go-watermill-template"
   },
-  "homepage": "https://github.com/asyncapi/go-watermill-template#readme",
+  "homepage": "https://github.com/arthurspa/go-watermill-template#readme",
   "dependencies": {
     "@asyncapi/generator-filters": "^2.0.0",
     "@asyncapi/generator-hooks": "^0.1.0",
     "@asyncapi/generator-react-sdk": "^0.2.23",
-    "@asyncapi/modelina": "^2.0.2"
+    "@asyncapi/modelina": "^2.0.2",
+    "@asyncapi/parser": "^2.1.1"
   },
   "release": {
     "branches": [
@@ -60,15 +61,20 @@
   },
   "generator": {
     "renderer": "react",
+    "apiVersion": "v2",
     "parameters": {
-      "moduleName": {
-        "description": "name of the go module to be generated",
-        "default": "go-async-api"
+      "packageName": {
+        "description": "name of the go package to be generated",
+        "default": "asyncapigen"
+      },
+      "applicationId": {
+        "description": "name of the application. Used to prefix the topic names",
+        "default": ""
       }
     },
     "generator": ">=1.3.0 <2.0.0",
     "supportedProtocols": [
-      "amqp"
+      "googlepubsub"
     ]
   },
   "devDependencies": {
