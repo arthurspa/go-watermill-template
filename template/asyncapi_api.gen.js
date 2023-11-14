@@ -24,6 +24,15 @@ const subscriptionHandlerInterfaceMethod = (channelName, operation, payload, sum
   ${operation}(ctx context.Context, msg *message.Message, payload *${payload}) error
 `;
 
+const routerSnippet = (channelName, operation) => `
+  router.AddNoPublisherHandler(
+    "${operation}",
+    mergePrefixesToTopicName(topicNamePrefix, "${channelName}"),
+    subscriber,
+    wrapper.${operation},
+)
+`;
+
 function SubscriptionHandlers(channels) {
   let output = '';
 
@@ -60,6 +69,24 @@ function SubscriptionHandlerInterfaceMethods(channels) {
       const payload = pascalCase(message.payload().id());
       const summary = message.summary();
       output += subscriptionHandlerInterfaceMethod(channelName, operation, payload, summary);
+    }
+  }
+
+  return output;
+}
+
+function AddRouterSnippets(channels) {
+  let output = '';
+
+  for (const channel of channels) {
+    if (channelHasPub(channel)) {
+      const operation = pascalCase(channel.operations().filterByReceive()[0].id());
+      if (!operation) {
+        throw new Error('This template requires operationId to be set for every operation.');
+      }
+
+      const channelName = channel.id();
+      output += routerSnippet(channelName, operation);
     }
   }
 
@@ -107,38 +134,29 @@ type SubscriberHandlerWrapper struct {
 
 ${SubscriptionHandlers(asyncapi.channels())}
 
-func (w *SubscriberHandlerWrapper) OnNewEventLog(msg *message.Message) error {
-
-  var payload EventLog
-  err := json.Unmarshal(msg.Payload, &payload)
-  if err != nil {
-    return fmt.Errorf("OnNewEventlog: %w", err)
-  }
-
-  err = w.Handler.OnNewEventLog(msg.Context(), msg, &payload)
-
-  return err
-}
-
 func RegisterSubscriberHandlers(router *message.Router, subscriber message.Subscriber, subscriberHandler SubscriberHandlerInterface, topicNamePrefix string) {
 
   wrapper := SubscriberHandlerWrapper{
     Handler: subscriberHandler,
   }
 
-  topicName := fmt.Sprintf("%s-new-event-log", apiId)
-  if topicNamePrefix != "" {
-    topicName = fmt.Sprintf("%s-%s-new-event-log", apiId, topicNamePrefix)
-  }
-
-  router.AddNoPublisherHandler(
-    "OnNewEventLog",
-    topicName,
-    subscriber,
-    wrapper.OnNewEventLog,
-  )
+  ${AddRouterSnippets(asyncapi.channels())}
 
 }
+
+func mergePrefixesToTopicName(topicNamePrefix string, topicName string) string {
+
+	if applicationId != "" {
+		topicName = applicationId + "-" + topicName
+	}
+
+	if topicNamePrefix != "" {
+		topicName = topicNamePrefix + "-" + topicName
+	}
+
+	return topicName
+}
+
 `
 
   return (
