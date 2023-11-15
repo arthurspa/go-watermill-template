@@ -42,13 +42,9 @@ export default async function ({ asyncapi, params }) {
   let imports = `
 package ${params.packageName}
 
-import (
-  "encoding/json"
-)
-
 `;
 
-  let body = ""
+  let body = "";
 
   models.forEach(model => {
     body += `
