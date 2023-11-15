@@ -1,5 +1,5 @@
 const { File } = require('@asyncapi/generator-react-sdk');
-import { hasPubOrSub, hasSub, channelHasPub, channelHasSub, pascalCase } from '../components/common';
+import { hasPubOrSub, hasSub, headerComment, channelHasSub, pascalCase } from '../components/common';
 
 const publisherFunction = (channelName, operationId, payload, summary) => `
 // ${operationId} publishes messages to topic ${channelName}
@@ -49,6 +49,8 @@ export default async function ({ asyncapi, params }) {
     return;
   }
 
+  console.log('####', params)
+  const comment = headerComment(params.packageName)
 
   let imports = `
 package ${params.packageName}
@@ -88,6 +90,7 @@ ${PublisherHandlers(asyncapi.channels())}
 
   return (
     <File name="asyncapi_pub.gen.go">
+      {comment}
       {imports}
       {hasSub(asyncapi) ? body : ''}
     </File>

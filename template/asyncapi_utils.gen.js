@@ -1,6 +1,8 @@
 const { File } = require('@asyncapi/generator-react-sdk');
+import { headerComment } from '../components/common';
 
 export default async function ({ asyncapi, params }) {
+    const comment = headerComment(params.packageName)
 
     let imports = `
 package ${params.packageName}
@@ -78,6 +80,7 @@ func mergePrefixToTopicName(topicNamePrefix string, topicName string) string {
 
     return (
         <File name="asyncapi_utils.gen.go">
+            {comment}
             {imports}
             {body}
         </File>

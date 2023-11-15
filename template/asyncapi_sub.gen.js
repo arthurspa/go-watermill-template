@@ -1,5 +1,5 @@
 const { File } = require('@asyncapi/generator-react-sdk');
-import { hasPubOrSub, hasSub, channelHasPub, channelHasSub, pascalCase } from '../components/common';
+import { hasPubOrSub, hasSub, channelHasPub, headerComment, pascalCase } from '../components/common';
 
 
 const subscriptionFunction = (channelName, operationId, payload) => `
@@ -102,6 +102,7 @@ export default async function ({ asyncapi, params }) {
     return;
   }
 
+  const comment = headerComment(params.packageName)
 
   let imports = `
 package ${params.packageName}
@@ -149,6 +150,7 @@ func RegisterSubscriberHandlersWithTopicPrefix(router *message.Router, subscribe
 
   return (
     <File name="asyncapi_sub.gen.go">
+      {comment}
       {imports}
       {hasSub(asyncapi) ? body : ''}
     </File>

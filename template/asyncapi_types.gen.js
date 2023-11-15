@@ -1,6 +1,7 @@
 const { GoGenerator } = require('@asyncapi/modelina');
 const { File } = require('@asyncapi/generator-react-sdk');
 const { convertToOldAPI } = require('@asyncapi/parser');
+import { headerComment } from '../components/common';
 
 export default async function ({ asyncapi, params }) {
   const generator = new GoGenerator({
@@ -39,6 +40,8 @@ export default async function ({ asyncapi, params }) {
   const oldAsyncApi = convertToOldAPI(asyncapi);
   const models = await generator.generate(oldAsyncApi);
 
+  const comment = headerComment(params.packageName)
+
   let imports = `
 package ${params.packageName}
 
@@ -55,6 +58,7 @@ ${model.result}
 
   return (
     <File name="asyncapi_types.gen.go">
+      {comment}
       {imports}
       {body}
     </File>
