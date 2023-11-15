@@ -4,19 +4,19 @@ import { hasPubOrSub, hasSub, headerComment, channelHasSub, pascalCase } from '.
 const publisherFunction = (channelName, operationId, payload, summary) => `
 // ${operationId} publishes messages to topic ${channelName}
 // ${summary}
-func (ph *PublisherHandler) ${operationId}(ctx context.Context, payload ${payload}) (string, error) {
+func (ph *PublisherHandler) ${operationId}(ctx context.Context, payload ${payload}) (*message.Message, error) {
 	msg, err := PayloadToMessage(ctx, payload)
 	if err != nil {
-		return "", fmt.Errorf("${operationId}: %w", err)
+		return nil, fmt.Errorf("${operationId}: %w", err)
 	}
 
 	topicName := mergePrefixToTopicName(ph.topicNamePrefix, "${channelName}")
-	err = ph.publisher.Publish(topicName, msg)
+	err = ph.publish(ctx, topicName, msg)
 	if err != nil {
-		return "", fmt.Errorf("${operationId}: %w", err)
+		return nil, fmt.Errorf("${operationId}: %w", err)
 	}
 
-	return msg.UUID, nil
+	return msg, nil
 }
 `;
 
@@ -60,26 +60,57 @@ import (
 	"fmt"
 
 	"github.com/ThreeDotsLabs/watermill-googlecloud/pkg/googlecloud"
+	"github.com/ThreeDotsLabs/watermill/message"
 )
 
 `;
 
 
   let body = `
+type BeforePublishFn func(ctx context.Context, topicName string, msg *message.Message)
+type AfterPublishFn func(ctx context.Context, topicName string, msg *message.Message, err error)
+
+type PublisherHandlerConfig struct {
+  BeforePublishFn BeforePublishFn
+  AfterPublishFn  AfterPublishFn
+}
+
 type PublisherHandler struct {
   publisher       *googlecloud.Publisher
   topicNamePrefix string
+  beforePublishFn BeforePublishFn
+  afterPublishFn  AfterPublishFn
 }
 
-func NewPublisherHandler(publisher *googlecloud.Publisher) *PublisherHandler {
-  return NewPublisherHandlerWithTopicPrefix(publisher, "")
+func NewPublisherHandler(config PublisherHandlerConfig, publisher *googlecloud.Publisher) *PublisherHandler {
+  return NewPublisherHandlerWithTopicPrefix(config, publisher, "")
 }
 
-func NewPublisherHandlerWithTopicPrefix(publisher *googlecloud.Publisher, topicNamePrefix string) *PublisherHandler {
+func NewPublisherHandlerWithTopicPrefix(config PublisherHandlerConfig, publisher *googlecloud.Publisher, topicNamePrefix string) *PublisherHandler {
   return &PublisherHandler{
     publisher:       publisher,
     topicNamePrefix: topicNamePrefix,
+    beforePublishFn: config.BeforePublishFn,
+    afterPublishFn:  config.AfterPublishFn,
   }
+}
+
+func (ph *PublisherHandler) beforePublish(ctx context.Context, topicName string, msg *message.Message) {
+  ph.beforePublishFn(ctx, topicName, msg)
+}
+
+func (ph *PublisherHandler) publish(ctx context.Context, topicName string, msg *message.Message) error {
+  if ph.beforePublishFn != nil {
+    ph.beforePublishFn(ctx, topicName, msg)
+  }
+
+  err := ph.publisher.Publish(topicName, msg)
+
+  if ph.afterPublishFn != nil {
+    ph.afterPublishFn(ctx, topicName, msg, err)
+  }
+
+  return err
 }
 
 ${PublisherHandlers(asyncapi.channels())}
