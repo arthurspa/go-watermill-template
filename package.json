@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/arthurspa/go-watermill-template"
+    "url": "git+https://github.com/arthurspa/go-watermill-template.git"
   },
   "keywords": [
     "asyncapi",
@@ -107,5 +107,9 @@
         }
       ]
     ]
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "test"
   }
 }
