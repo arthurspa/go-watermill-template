@@ -70,7 +70,7 @@ func PayloadToMessage[T any](ctx context.Context, payload T) (*message.Message, 
 func mergePrefixToTopicName(topicNamePrefix string, topicName string) string {
 
     if topicNamePrefix != "" {
-        topicName = topicNamePrefix + "-" + topicName
+        topicName = topicNamePrefix + "_" + topicName
     }
 
     return topicName
