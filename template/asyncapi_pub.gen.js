@@ -10,7 +10,7 @@ func (ph *PublisherHandler) ${operationId}(ctx context.Context, payload ${payloa
 		return "", fmt.Errorf("${operationId}: %w", err)
 	}
 
-	topicName := mergePrefixesToTopicName(ph.topicNamePrefix, "${channelName}")
+	topicName := mergePrefixToTopicName(ph.topicNamePrefix, "${channelName}")
 	err = ph.publisher.Publish(topicName, msg)
 	if err != nil {
 		return "", fmt.Errorf("${operationId}: %w", err)
@@ -70,7 +70,7 @@ type PublisherHandler struct {
 }
 
 func NewPublisherHandler(publisher *googlecloud.Publisher) *PublisherHandler {
-  return NewPublisherHandler(publisher, "")
+  return NewPublisherHandlerWithTopicPrefix(publisher, "")
 }
 
 func NewPublisherHandlerWithTopicPrefix(publisher *googlecloud.Publisher, topicNamePrefix string) *PublisherHandler {
