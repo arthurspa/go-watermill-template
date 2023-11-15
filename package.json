@@ -22,7 +22,7 @@
     "generator",
     "template"
   ],
-  "author": "Anand Sunderraman <anand.sunderraman@gmail.com> (https://github.com/anandsunderraman)",
+  "author": "Arthur Silva <arthursilva.ee@gmail.com> (https://github.com/arthurspa)",
   "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
