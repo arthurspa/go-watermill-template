@@ -129,7 +129,7 @@ type SubscriberHandlerWrapper struct {
 
 ${SubscriptionHandlers(asyncapi.channels())}
 
-func RegisterSubscriberHandlers(router *message.Router, subscriber message.Subscriber, subscriberHandler SubscriberHandlerInterface, topicNamePrefix string) {
+func RegisterSubscriberHandlers(router *message.Router, subscriber message.Subscriber, subscriberHandler SubscriberHandlerInterface) {
 
   RegisterSubscriberHandlersWithTopicPrefix(router, subscriber, subscriberHandler, "")
 
