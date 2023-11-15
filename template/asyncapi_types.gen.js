@@ -10,11 +10,25 @@ export default async function ({ asyncapi, params }) {
           field({ field }) {
 
             let extension = '';
+
+            // Modelina does not support nullable fields yet. See https://github.com/asyncapi/modelina/issues/1418
             const pointerSymbol = field.required ? '' : '*';
+
+            // Modelina does not support the property 'format' as oapi-codegen does. So we have to manually add it.
+            let propertyType = '';
+            if (field.property.originalInput.format === 'int64' || field.property.originalInput.format === 'time.Time') {
+              propertyType = field.property.originalInput.format
+            } else {
+              propertyType = field.property.type
+            }
+
+            // Modelina does not support extra tag for validation as oapi-codegen does. So we have to manually add it.
             if (field.property.originalInput['x-asyncapi-codegen-extra-tags'] && field.property.originalInput['x-asyncapi-codegen-extra-tags']['validate']) {
               extension = `validate:"${field.property.originalInput['x-asyncapi-codegen-extra-tags']['validate']}"`
             }
-            return `${field.propertyName} ${pointerSymbol}${field.property.type} \`json:"${field.unconstrainedPropertyName}" ${extension}\``;
+
+
+            return `${field.propertyName} ${pointerSymbol}${propertyType} \`json:"${field.unconstrainedPropertyName}" ${extension}\``;
           },
         }
       }
@@ -25,36 +39,19 @@ export default async function ({ asyncapi, params }) {
   const oldAsyncApi = convertToOldAPI(asyncapi);
   const models = await generator.generate(oldAsyncApi);
 
-  let typesContent = `
+  let imports = `
 package ${params.packageName}
 
 import (
   "encoding/json"
-
-  "github.com/ThreeDotsLabs/watermill/message"
 )
 
 `;
 
-  const payloadUtils = `
-
-// PayloadToMessage converts a payload to watermill message
-func PayloadToMessage[T any](payload T) (*message.Message, error) {
-	var message message.Message
-
-	bytes, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	message.Payload = bytes
-
-	return &message, nil
-}
-
-`;
+  let body = ""
 
   models.forEach(model => {
-    typesContent += `
+    body += `
 ${model.dependencies.join('\n')}
 ${model.result}
 `;
@@ -62,8 +59,8 @@ ${model.result}
 
   return (
     <File name="asyncapi_types.gen.go">
-      {typesContent}
-      {payloadUtils}
+      {imports}
+      {body}
     </File>
   );
 }
